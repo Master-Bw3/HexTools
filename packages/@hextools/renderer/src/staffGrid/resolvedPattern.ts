@@ -1,6 +1,11 @@
 import { RGBColor } from "../colors";
 import type { HexCoord, HexPattern } from "./hexMath";
 
+export interface UnresolvedPattern {
+  pattern: HexPattern;
+  origin: HexCoord;
+}
+
 export interface ResolvedPattern {
   pattern: HexPattern;
   origin: HexCoord;

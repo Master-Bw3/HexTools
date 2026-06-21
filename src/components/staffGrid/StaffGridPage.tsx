@@ -83,6 +83,7 @@ export default function StaffGridPage() {
         settings={settings}
         onSettingsChange={setSettings}
         onResetSettings={() => setSettings(defaultSettings)}
+        onSortPatterns={() => staffGridRef.current?.sortPatterns()}
       />
     </>
   );

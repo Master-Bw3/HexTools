@@ -1,5 +1,6 @@
 import { Box } from "@mantine/core";
 import React, {
+  useCallback,
   useEffect,
   useEffectEvent,
   useImperativeHandle,
@@ -23,6 +24,7 @@ export interface StaffGridProps {
 
 export interface StaffGridRef {
   cancelPattern: () => void;
+  sortPatterns: () => void;
   setZappyMultiplier: (value: number) => void;
 }
 
@@ -40,6 +42,16 @@ export function StaffGrid({
   const isCtrlDownRef = useRef(false);
   const zappyMultiplierRef = useRef(1);
 
+  const sortPatterns = useCallback(() => {
+    const rawPatterns = patterns.map((p) => p.pattern);
+    const unresolvedPats = guiRef.current?.layoutPatterns(rawPatterns);
+    const resolvedPats = unresolvedPats!.map((pattern, i) => ({
+      ...pattern,
+      type: patterns[i].type,
+    }));
+    guiRef.current?.setPatterns(resolvedPats, false);
+  }, [patterns]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -49,8 +61,9 @@ export function StaffGrid({
       setZappyMultiplier: (value) => {
         zappyMultiplierRef.current = value;
       },
+      sortPatterns: sortPatterns,
     }),
-    [],
+    [sortPatterns],
   );
 
   const updateMouseRefs = (event: React.PointerEvent) => {

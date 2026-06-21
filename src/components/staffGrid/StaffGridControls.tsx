@@ -8,6 +8,7 @@ import {
   IconArrowBackUp,
   IconArrowForwardUp,
   IconMenu2,
+  IconSortDescending2Filled,
   IconTrash,
 } from "@tabler/icons-react";
 
@@ -26,6 +27,7 @@ export interface StaffGridControlsProps
   patterns: readonly ResolvedPattern[];
   patternsHandlers: UseStateHistoryHandlers<readonly ResolvedPattern[]>;
   patternsHistory: UseStateHistoryValue<readonly ResolvedPattern[]>;
+  onSortPatterns: () => void;
 }
 
 export default function StaffGridControls({
@@ -37,6 +39,7 @@ export default function StaffGridControls({
   settings,
   onSettingsChange,
   onResetSettings,
+  onSortPatterns,
 }: StaffGridControlsProps) {
   const [sidebarOpen, { toggle: toggleSidebar, close: closeSidebar }] =
     useDisclosure(false);
@@ -75,6 +78,14 @@ export default function StaffGridControls({
           }
         >
           <IconArrowForwardUp />
+        </ActionIcon>
+
+        <ActionIcon
+          {...staffGridButtonProps}
+          onClick={() => onSortPatterns()}
+          disabled={patterns.length === 0}
+        >
+          <IconSortDescending2Filled />
         </ActionIcon>
 
         <ActionIcon

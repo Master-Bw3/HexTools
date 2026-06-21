@@ -10,13 +10,18 @@ import {
 } from "../shaders";
 import { HexAngle, HexCoord, HexDir, HexPattern } from "./hexMath";
 import { coordToPx, pxToCoord } from "./hexUtils";
+import { LayoutHelper } from "./layoutHelper";
 import {
   drawPatternFromPoints,
   drawSpot,
   findDupIndices,
   type DrawPatternFromPointsOptions,
 } from "./renderLib";
-import type { ResolvedPattern, ResolvedPatternType } from "./resolvedPattern";
+import type {
+  ResolvedPattern,
+  ResolvedPatternType,
+  UnresolvedPattern,
+} from "./resolvedPattern";
 
 export interface GuiSpellcastingSettings {
   guiScale: number;
@@ -101,6 +106,111 @@ export class GuiSpellcasting {
       this.usedSpots.add(HexCoord.toString(pos));
     }
     this.onPatternsChange?.(this.patterns);
+  }
+
+  layoutPatterns(patterns: readonly HexPattern[]): UnresolvedPattern[] {
+    const topLeftCoord = this.pxToCoord([this.hexSize, this.hexSize]);
+
+    let prevRightmostPoint: HexCoord = topLeftCoord;
+    let rowTop: number = topLeftCoord.r;
+    const rowDepths = new Map<number, number>();
+
+    const usedPoints: Set<string> = new Set<string>();
+    const unresolvedPatterns: UnresolvedPattern[] = [];
+    for (const pattern of patterns) {
+      let patternPoints = [...pattern.positions()];
+      const rightmostPoint = () =>
+        LayoutHelper.getRightmostPoint(patternPoints)!;
+      const topmostPoint = () => LayoutHelper.getTopmostPoint(patternPoints)!;
+      const leftmostPoint = () => LayoutHelper.getLeftmostPoint(patternPoints)!;
+
+      // move the pattern to be on top of the previous pattern
+      const targetPx = new Vec2(
+        this.coordToPx(prevRightmostPoint).x,
+        this.coordToPx({ q: 0, r: rowTop }).y,
+      );
+      const targetCoord = this.pxToCoord(targetPx);
+      patternPoints = [
+        ...LayoutHelper.shiftPoints(patternPoints, {
+          q: targetCoord.q - rightmostPoint().q,
+          r: targetCoord.r - topmostPoint().r,
+        }),
+      ];
+
+      // while any point is either off the left edge or overlapping a used point,
+      // shift to the right by 1
+      while (
+        patternPoints.some((pt) => this.coordToPx(pt)[0] < 0)
+        || patternPoints.some((pt) => usedPoints.has(`${pt.q},${pt.r}`))
+      ) {
+        patternPoints = [
+          ...LayoutHelper.shiftPoints(patternPoints, { q: 1, r: 0 }),
+        ];
+
+        const leftmostPx = this.coordToPx(leftmostPoint()).x;
+        const rightmostPx = this.coordToPx(rightmostPoint()).x;
+        // if the point is too far to the right, move to the start of the next row
+        // - unless the point is wider than the canvas width (so it doesn't loop forever)
+        if (
+          rightmostPx > this.width
+          && !(rightmostPx - leftmostPx > this.width - this.hexSize)
+        ) {
+          let depth = topLeftCoord.r;
+          if (this.settings.layoutMode == "compact") {
+            //get mode of the deepest points
+            let max = 0;
+            for (const [_depth, count] of rowDepths) {
+              if (count > max) {
+                max = count;
+                depth = _depth;
+              }
+            }
+          } else if (this.settings.layoutMode == "distinct-lines") {
+            //get deepest point
+            console.log("DISTINCT");
+            for (const [_depth, _] of rowDepths) {
+              if (_depth > depth) {
+                depth = _depth;
+              }
+            }
+          }
+
+          rowTop = modeDepth + 1;
+          prevRightmostPoint = topLeftCoord;
+          rowDepths.clear();
+
+          const targetPx = new Vec2(
+            this.coordToPx(prevRightmostPoint).x,
+            this.coordToPx({ q: 0, r: rowTop }).y,
+          );
+          const targetCoord = this.pxToCoord(targetPx);
+          patternPoints = [
+            ...LayoutHelper.shiftPoints(patternPoints, {
+              q: targetCoord.q - rightmostPoint().q,
+              r: targetCoord.r - topmostPoint().r,
+            }),
+          ];
+        }
+      }
+
+      // collect all of the bottom points' r values
+      const bottommostPoint = LayoutHelper.getBottommostPoint(patternPoints)!;
+      patternPoints.forEach((pt) => {
+        if (pt.r >= bottommostPoint.r) {
+          rowDepths.set(pt.r, (rowDepths.get(pt.r) ?? 0) + 1);
+        }
+      });
+
+      prevRightmostPoint = rightmostPoint();
+      patternPoints.forEach((pt) => usedPoints.add(`${pt.q},${pt.r}`));
+
+      unresolvedPatterns.push({
+        pattern: pattern,
+        origin: patternPoints[0],
+      });
+    }
+
+    return unresolvedPatterns;
   }
 
   setPatterns(resolvedPatterns: readonly ResolvedPattern[], notify: boolean) {
