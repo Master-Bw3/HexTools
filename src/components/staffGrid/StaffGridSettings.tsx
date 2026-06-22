@@ -42,6 +42,7 @@ export default function StaffGridSettings({
     clickingTogglesDrawing,
     zappyOnShake,
     shakeAction,
+    layoutMode,
   } = settings;
 
   const [opened, { open, close }] = useDisclosure(false);
@@ -171,6 +172,18 @@ export default function StaffGridSettings({
                 { label: "None", value: "none" },
                 { label: "Around Mouse", value: "mouse" },
                 { label: "Full Grid", value: "all" },
+              ]}
+              fullWidth
+            />
+          </InputWrapper>
+
+          <InputWrapper label="Pattern Sort Layout" labelElement="div">
+            <SegmentedControl
+              value={layoutMode}
+              onChange={getSetter("layoutMode")}
+              data={[
+                { label: "Distinct Lines", value: "distinct-lines" },
+                { label: "Compact", value: "compact" },
               ]}
               fullWidth
             />

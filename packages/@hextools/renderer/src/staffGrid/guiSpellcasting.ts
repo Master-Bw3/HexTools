@@ -34,6 +34,7 @@ export interface GuiSpellcastingSettings {
   clickingTogglesDrawing: boolean;
   zappyOnShake: boolean;
   shakeAction: "none" | "undo" | "clear";
+  layoutMode: "distinct-lines" | "compact";
 }
 
 // https://github.com/FallingColors/HexMod/blob/724c36bba6a97f97d16f95d16f7addb700e62443/Common/src/main/java/at/petrak/hexcasting/client/gui/GuiSpellcasting.kt
@@ -108,7 +109,9 @@ export class GuiSpellcasting {
     this.onPatternsChange?.(this.patterns);
   }
 
-  layoutPatterns(patterns: readonly HexPattern[]): UnresolvedPattern[] {
+  *layoutPatterns(
+    patterns: readonly HexPattern[],
+  ): Generator<UnresolvedPattern> {
     const topLeftCoord = this.pxToCoord([this.hexSize, this.hexSize]);
 
     let prevRightmostPoint: HexCoord = topLeftCoord;
@@ -116,7 +119,6 @@ export class GuiSpellcasting {
     const rowDepths = new Map<number, number>();
 
     const usedPoints: Set<string> = new Set<string>();
-    const unresolvedPatterns: UnresolvedPattern[] = [];
     for (const pattern of patterns) {
       let patternPoints = [...pattern.positions()];
       const rightmostPoint = () =>
@@ -167,7 +169,6 @@ export class GuiSpellcasting {
             }
           } else if (this.settings.layoutMode == "distinct-lines") {
             //get deepest point
-            console.log("DISTINCT");
             for (const [_depth, _] of rowDepths) {
               if (_depth > depth) {
                 depth = _depth;
@@ -175,7 +176,7 @@ export class GuiSpellcasting {
             }
           }
 
-          rowTop = modeDepth + 1;
+          rowTop = depth + 1;
           prevRightmostPoint = topLeftCoord;
           rowDepths.clear();
 
@@ -204,13 +205,11 @@ export class GuiSpellcasting {
       prevRightmostPoint = rightmostPoint();
       patternPoints.forEach((pt) => usedPoints.add(`${pt.q},${pt.r}`));
 
-      unresolvedPatterns.push({
+      yield {
         pattern: pattern,
         origin: patternPoints[0],
-      });
+      };
     }
-
-    return unresolvedPatterns;
   }
 
   setPatterns(resolvedPatterns: readonly ResolvedPattern[], notify: boolean) {
@@ -530,6 +529,7 @@ export class GuiSpellcasting {
       clickingTogglesDrawing: false,
       shakeAction: "none",
       zappyOnShake: false,
+      layoutMode: "distinct-lines",
     };
   }
 }

@@ -44,8 +44,10 @@ export function StaffGrid({
 
   const sortPatterns = useCallback(() => {
     const rawPatterns = patterns.map((p) => p.pattern);
-    const unresolvedPats = guiRef.current?.layoutPatterns(rawPatterns);
-    const resolvedPats = unresolvedPats!.map((pattern, i) => ({
+    const unresolvedPats = guiRef.current
+      ? [...guiRef.current.layoutPatterns(rawPatterns)]
+      : [];
+    const resolvedPats = unresolvedPats.map((pattern, i) => ({
       ...pattern,
       type: patterns[i].type,
     }));
