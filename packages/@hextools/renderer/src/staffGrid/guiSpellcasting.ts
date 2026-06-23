@@ -227,6 +227,25 @@ export class GuiSpellcasting {
     }
   }
 
+  getPatterns(): readonly ResolvedPattern[] {
+    return this.patterns;
+  }
+
+  selectPattern(rawPos: Vec2Like): ResolvedPattern | undefined {
+    const hexCoord = this.pxToCoord([
+      this.scaleValue(rawPos[0]),
+      this.scaleValue(rawPos[1]),
+    ]);
+    return this.patterns.find((resolvedPattern) => {
+      const positions = resolvedPattern.pattern.positions(
+        resolvedPattern.origin,
+      );
+      return [...positions].some(
+        (pos) => pos.q == hexCoord.q && pos.r == hexCoord.r,
+      );
+    });
+  }
+
   setOffset(offset: Vec2Like) {
     this.additionalCoordsOffset = offset;
   }

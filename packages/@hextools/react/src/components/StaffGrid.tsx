@@ -126,6 +126,20 @@ export function StaffGrid({
   const handleKeyDown = (event: KeyboardEvent) => {
     isCtrlDownRef.current = event.ctrlKey;
     isShiftDownRef.current = event.shiftKey;
+
+    if (event.key == "Delete") {
+      const gui = guiRef.current;
+      const patternToRemove = gui?.selectPattern([
+        mouseXRef.current,
+        mouseYRef.current,
+      ]);
+      if (patternToRemove !== undefined && gui !== null) {
+        const patterns = gui
+          .getPatterns()
+          .filter((pattern) => pattern !== patternToRemove);
+        gui.setPatterns(patterns, true);
+      }
+    }
   };
 
   const handleKeyUp = (event: KeyboardEvent) => {
