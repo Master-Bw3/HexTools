@@ -40,6 +40,7 @@ export function StaffGrid({
   const mouseXRef = useRef(0);
   const mouseYRef = useRef(0);
   const isCtrlDownRef = useRef(false);
+  const isShiftDownRef = useRef(false);
   const zappyMultiplierRef = useRef(1);
 
   const sortPatterns = useCallback(() => {
@@ -77,7 +78,7 @@ export function StaffGrid({
   };
 
   const handlePointerDown = (event: React.PointerEvent) => {
-    if (updateMouseRefs(event)) {
+    if (updateMouseRefs(event) && !isShiftDownRef.current) {
       guiRef.current?.mouseClicked({
         mouseX: mouseXRef.current,
         mouseY: mouseYRef.current,
@@ -88,8 +89,15 @@ export function StaffGrid({
   };
 
   const handlePointerMove = (event: React.PointerEvent) => {
+    const prevMouseX = mouseXRef.current;
+    const prevMouseY = mouseYRef.current;
     if (updateMouseRefs(event)) {
-      if (event.buttons !== 0) {
+      if (isShiftDownRef.current && event.buttons !== 0) {
+        guiRef.current?.pan([
+          mouseXRef.current - prevMouseX,
+          mouseYRef.current - prevMouseY,
+        ]);
+      } else if (event.buttons !== 0) {
         guiRef.current?.mouseDragged({
           mouseX: mouseXRef.current,
           mouseY: mouseYRef.current,
@@ -117,10 +125,12 @@ export function StaffGrid({
 
   const handleKeyDown = (event: KeyboardEvent) => {
     isCtrlDownRef.current = event.ctrlKey;
+    isShiftDownRef.current = event.shiftKey;
   };
 
   const handleKeyUp = (event: KeyboardEvent) => {
     isCtrlDownRef.current = event.ctrlKey;
+    isShiftDownRef.current = event.shiftKey;
   };
 
   const setupGui = useEffectEvent(() => {

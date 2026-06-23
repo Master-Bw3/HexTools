@@ -51,6 +51,8 @@ export class GuiSpellcasting {
   private usedSpots = new Set<string>();
   private patterns: readonly ResolvedPattern[] = [];
 
+  private additionalCoordsOffset: Vec2Like = [0, 0];
+
   constructor({
     gl,
     settings,
@@ -223,6 +225,18 @@ export class GuiSpellcasting {
     if (notify) {
       this.onPatternsChange?.(this.patterns);
     }
+  }
+
+  setOffset(offset: Vec2Like) {
+    this.additionalCoordsOffset = offset;
+  }
+
+  getOffset(): Vec2Like {
+    return this.additionalCoordsOffset;
+  }
+
+  pan(offset: Vec2Like) {
+    Vec2.add(this.additionalCoordsOffset, this.additionalCoordsOffset, offset);
   }
 
   mouseClicked(rawMousePos: MousePos) {
@@ -502,7 +516,12 @@ export class GuiSpellcasting {
   }
 
   get coordsOffset() {
-    return new Vec2(this.width * 0.5, this.height * 0.5);
+    return new Vec2(
+      this.width * 0.5
+        + this.additionalCoordsOffset[0] / this.settings.guiScale,
+      this.height * 0.5
+        + this.additionalCoordsOffset[1] / this.settings.guiScale,
+    );
   }
 
   coordToPx(coord: HexCoord) {
